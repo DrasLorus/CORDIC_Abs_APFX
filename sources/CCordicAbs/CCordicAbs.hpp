@@ -2,7 +2,7 @@
  *
  * Copyright 2022 Camille "DrasLorus" Monière.
  *
- * This file is part of CORDIC_ABS_APFX.
+ * This file is part of CORDIC_Abs_APFX.
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU
  * Lesser General Public License as published by the Free Software Foundation, either version 3 of
@@ -30,6 +30,8 @@
 #include <ap_fixed.h>
 #include <ap_int.h>
 
+#include "hls_abs/hls_abs.hpp"
+
 #define cst_abs(x) (x > 0 ? x : -x)
 
 template <unsigned TIn_W, unsigned TIn_I, unsigned Tnb_stages>
@@ -53,8 +55,50 @@ public:
         return in * kn_i / 8U;
     }
 
+    static constexpr int64_t process(int64_t re_in, int64_t im_in) {
+
+        const int64_t re_x = re_in;
+        const int64_t im_x = im_in;
+
+        int64_t A = cst_abs(re_x);
+        int64_t B = cst_abs(im_x);
+
+        for (uint16_t u = 1; u < nb_stages + 1; u++) {
+
+            const bool sign_B = B > 0;
+
+            const int64_t step_A = +B / int64_t(1U << (u - 1));
+            const int64_t step_B = -A / int64_t(1U << (u - 1));
+
+            B = sign_B ? B + step_B : B - step_B;
+            A = sign_B ? A + step_A : A - step_A;
+        }
+
+        return A;
+    }
+
+    static constexpr ap_int<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {
+
+        ap_int<Out_W> A = hls_abs<false>::abs(re_in);
+        ap_int<Out_W> B = hls_abs<false>::abs(im_in);
+
+        for (uint16_t u = 1; u < nb_stages + 1; u++) {
+
+            const bool sign_B = B > 0;
+
+            const int64_t step_A = (+B) >> (u - 1);
+            const int64_t step_B = (-A) >> (u - 1);
+
+            B = sign_B ? B + step_B : B - step_B;
+            A = sign_B ? A + step_A : A - step_A;
+        }
+
+        return A;
+    }
+
 #if !defined(__SYNTHESIS__) && defined(SOFTWARE)
-    static constexpr int64_t process(const std::complex<int64_t> & x_in) {
+    static constexpr int64_t
+    process(const std::complex<int64_t> & x_in) {
 
         const int64_t re_x = x_in.real();
         const int64_t im_x = x_in.imag();
