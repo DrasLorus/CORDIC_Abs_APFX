@@ -101,12 +101,19 @@ if (ENABLE_SOFTWARE)
   add_compile_definitions (SOFTWARE=1)
 endif ()
 
-
 # ##################################################################################################
 
-add_library(cordicabs sources/CCordicAbs/CCordicAbs.cpp)
-target_include_directories(cordicabs PUBLIC sources)
-target_include_directories(cordicabs SYSTEM PUBLIC  ${AP_INCLUDE_DIR})
+add_library (cordicabs sources/CCordicAbs/CCordicAbs.cpp)
+target_include_directories (cordicabs PUBLIC sources)
+target_include_directories (cordicabs SYSTEM PUBLIC ${AP_INCLUDE_DIR})
+
+if (ENABLE_XILINX)
+  add_executable (
+    cordicabs_xilinx_tb sources/top_level/top_level_cordic_tb.cpp
+                        sources/top_level/top_level_cordic.cpp
+  )
+  target_link_libraries (cordicabs_xilinx_tb cordicabs)
+endif ()
 
 if (ENABLE_TESTING)
   find_package (Catch2 REQUIRED)
@@ -121,4 +128,3 @@ if (ENABLE_TESTING)
   include (Catch)
   catch_discover_tests (cordicabs_tb)
 endif ()
-

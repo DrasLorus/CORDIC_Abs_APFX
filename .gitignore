@@ -11,3 +11,6 @@ RomGenerators/sources/main_generator_??*_*.cpp
 sources/CCordicRotateRom/CCordicRotateRom_*.?pp
 sources/CordicRoms/cordic_rom_*.?pp
 sources/tb/cordic_rom_tb_??*_*.?pp
+
+hls_files/cordicabs_16_4_6/*
+!hls_files/cordicabs_16_4_6/*.tcl

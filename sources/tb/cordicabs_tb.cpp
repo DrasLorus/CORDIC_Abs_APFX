@@ -18,8 +18,12 @@
  */
 
 #include "CCordicAbs/CCordicAbs.hpp"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+
+#include <cmath>
+#include <complex>
 
 #include <catch2/catch.hpp>
 
@@ -29,7 +33,7 @@ using Catch::Matchers::Floating::WithinAbsMatcher;
 
 #if defined(SOFTWARE)
 TEST_CASE("Constexpr CordicAbs works with C-Types", "[CORDICABS]") {
-    SECTION("W:16 - I:4 - Stages:6") {
+    SECTION("W:16 - I:4 - Stages:6 - double") {
         typedef CCordicAbs<16, 4, 6> cordic_abs;
 
         string input_fn  = "../data/input.dat";  // _8_14_4_17_5_19_7_12
@@ -79,6 +83,59 @@ TEST_CASE("Constexpr CordicAbs works with C-Types", "[CORDICABS]") {
         }
         // outfile.close();
     }
+
+    SECTION("W:16 - I:4 - Stages:6 - int64") {
+        typedef CCordicAbs<16, 4, 6> cordic_abs;
+
+        string input_fn  = "../data/input.dat";  // _8_14_4_17_5_19_7_12
+        string output_fn = "../data/output.dat"; // _8_14_4_17_5_19_7_12
+
+        constexpr unsigned n_lines = 100000;
+
+        complex<int64_t> values_in[n_lines];
+        int64_t          values_out[n_lines];
+
+        double results[n_lines];
+
+        FILE * INPUT = fopen(input_fn.c_str(), "r");
+
+        // Init test vector
+        for (unsigned i = 0; i < n_lines; i++) {
+            double a, b, r;
+            fscanf(INPUT, "%lf,%lf,%lf\n", &a, &b, &r);
+
+            const complex<double>  c {a, b};
+            const complex<int64_t> ic {(int64_t) floor(c.real() * cordic_abs::in_scale_factor),
+                                       (int64_t) floor(c.imag() * cordic_abs::in_scale_factor)};
+            values_in[i] = ic;
+
+            const double ac = std::abs(c);
+            results[i]      = ac;
+        }
+
+        fclose(INPUT);
+
+        // Save the results to a file
+        // ofstream outfile("results.dat");
+
+        constexpr double abs_margin = double(1 << (cordic_abs::Out_I - 1)) * 2. / 100.;
+
+        // Executing the encoder
+        for (unsigned iter = 0; iter < n_lines; iter++) {
+            // Execute
+
+            values_out[iter] = cordic_abs::process(values_in[iter]);
+
+            // Display the results
+            // cout << "Series " << iter;
+            // cout << " Outcome: ";
+
+            // outfile << values_in[iter].real() << " " << values_in[iter].imag() << " " << values_out[iter] << " " << results[iter] << endl;
+
+            REQUIRE_THAT(cordic_abs::scale_cordic(double(values_out[iter])) / cordic_abs::out_scale_factor , WithinAbsMatcher(results[iter], abs_margin));
+        }
+        // outfile.close();
+    }
 }
 #endif
 
@@ -114,7 +171,7 @@ TEST_CASE("Constexpr CordicAbs works with AP-Types", "[CORDICABS]") {
         fclose(INPUT);
 
         // Save the results to a file
-        ofstream outfile("results.dat");
+        // ofstream outfile("results.dat");
 
         constexpr double abs_margin = double(1 << (cordic_abs::Out_I - 1)) * 2. / 100.;
 
@@ -128,16 +185,16 @@ TEST_CASE("Constexpr CordicAbs works with AP-Types", "[CORDICABS]") {
             // cout << "Series " << iter;
             // cout << " Outcome: ";
 
-            outfile << re_values_in[iter].to_double() / cordic_abs::in_scale_factor << " "
-                    << im_values_in[iter].to_double() / cordic_abs::in_scale_factor << " "
-                    << cordic_abs::scale_cordic(values_out[iter].to_double()) / cordic_abs::out_scale_factor << " "
-                    << results[iter] << endl;
+            // outfile << re_values_in[iter].to_double() / cordic_abs::in_scale_factor << " "
+            //         << im_values_in[iter].to_double() / cordic_abs::in_scale_factor << " "
+            //         << cordic_abs::scale_cordic(values_out[iter].to_double()) / cordic_abs::out_scale_factor << " "
+            //         << results[iter] << endl;
 
             const double dbl_res = cordic_abs::scale_cordic(values_out[iter].to_double()) / cordic_abs::out_scale_factor;
 
             REQUIRE_THAT(dbl_res, WithinAbsMatcher(results[iter], abs_margin));
         }
-        outfile.close();
+        // outfile.close();
 
         // Compare the results file with the golden results
         // int retval = 0;

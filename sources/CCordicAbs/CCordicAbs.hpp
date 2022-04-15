@@ -21,11 +21,14 @@
 #define C_CORDIC_ABS_HPP
 
 #include <climits>
-#include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 
+#if !defined(__SYNTHESIS__) && defined(SOFTWARE)
+#include <cmath>
 #include <complex>
+#endif
 
 #include <ap_fixed.h>
 #include <ap_int.h>
@@ -55,7 +58,39 @@ public:
         return in * kn_i / 8U;
     }
 
-    static constexpr int64_t process(int64_t re_in, int64_t im_in) {
+    static constexpr double scale_cordic(double in) {
+        return in * kn_values[nb_stages - 1];
+    }
+
+    static constexpr ap_uint<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {
+        ap_int<Out_W> A[nb_stages + 1];
+        ap_int<Out_W> B[nb_stages + 1];
+
+        A[0] = hls_abs<false>::abs(re_in);
+        B[0] = hls_abs<false>::abs(im_in);
+
+        for (uint16_t u = 0; u < nb_stages; u++) {
+            const bool sign_B = B[u] > 0;
+
+            const ap_int<Out_W> step_A = B[u] >> u;
+            const ap_int<Out_W> step_B = A[u] >> u;
+
+            const ap_int<Out_W> tmp_B = sign_B
+                                          ? ap_int<Out_W>(B[u] - step_B)
+                                          : ap_int<Out_W>(B[u] + step_B);
+            const ap_int<Out_W> tmp_A = sign_B
+                                          ? ap_int<Out_W>(A[u] + step_A)
+                                          : ap_int<Out_W>(A[u] - step_A);
+
+            A[u + 1] = tmp_A;
+            B[u + 1] = tmp_B;
+        }
+
+        return ap_uint<Out_W>(A[nb_stages]);
+    }
+
+#if !defined(__SYNTHESIS__) && defined(SOFTWARE)
+    static constexpr uint64_t process(int64_t re_in, int64_t im_in) {
 
         const int64_t re_x = re_in;
         const int64_t im_x = im_in;
@@ -77,28 +112,7 @@ public:
         return A;
     }
 
-    static constexpr ap_int<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {
-
-        ap_int<Out_W> A = hls_abs<false>::abs(re_in);
-        ap_int<Out_W> B = hls_abs<false>::abs(im_in);
-
-        for (uint16_t u = 1; u < nb_stages + 1; u++) {
-
-            const bool sign_B = B > 0;
-
-            const int64_t step_A = (+B) >> (u - 1);
-            const int64_t step_B = (-A) >> (u - 1);
-
-            B = sign_B ? B + step_B : B - step_B;
-            A = sign_B ? A + step_A : A - step_A;
-        }
-
-        return A;
-    }
-
-#if !defined(__SYNTHESIS__) && defined(SOFTWARE)
-    static constexpr int64_t
-    process(const std::complex<int64_t> & x_in) {
+    static constexpr uint64_t process(const std::complex<int64_t> & x_in) {
 
         const int64_t re_x = x_in.real();
         const int64_t im_x = x_in.imag();
@@ -118,10 +132,6 @@ public:
         }
 
         return A;
-    }
-
-    static constexpr double scale_cordic(double in) {
-        return in * kn_values[nb_stages - 1];
     }
 
     static constexpr double process(std::complex<double> x_in) {
