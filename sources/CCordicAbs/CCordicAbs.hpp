@@ -46,8 +46,8 @@ public:
 
     static constexpr const unsigned In_W      = TIn_W;
     static constexpr const unsigned In_I      = TIn_I;
-    static constexpr const unsigned Out_W     = In_W + 2;
-    static constexpr const unsigned Out_I     = In_I + 2;
+    static constexpr const unsigned Out_W     = In_W + 3;
+    static constexpr const unsigned Out_I     = In_I + 3;
     static constexpr const unsigned nb_stages = Tnb_stages;
 
     static constexpr unsigned kn_i             = unsigned(kn_values[nb_stages - 1] * double(1U << 3)); // 3 bits are enough

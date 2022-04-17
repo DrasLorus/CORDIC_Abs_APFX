@@ -18,5 +18,5 @@ set_clock_uncertainty 2
 #source "./cordicabs_16_4_6/solution/directives.tcl"
 csim_design -argv "${ROOT_DIR}/data/input.dat" -clean -O
 csynth_design
-# cosim_design -O -argv "${ROOT_DIR}/data/input.dat"
+cosim_design -O -argv "${ROOT_DIR}/data/input.dat"
 export_design -format ip_catalog
