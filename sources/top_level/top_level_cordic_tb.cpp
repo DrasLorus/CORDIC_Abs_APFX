@@ -40,17 +40,21 @@ int main(int argc, char ** argv) {
 
     string input_fn = "../data/input.dat"; // _8_14_4_17_5_19_7_12
 
-    if (argc == 2) {
+    if (argc > 1) {
         input_fn = string(argv[1]);
     }
 
-    constexpr unsigned n_lines = 100;
+    constexpr unsigned max_lines = 10000;
+    unsigned           n_lines   = max_lines;
+    if (argc > 2) {
+        n_lines = unsigned(std::stoi(string(argv[2])));
+    }
 
-    ap_int<cordic_abs_t::In_W>   re_values_in[n_lines];
-    ap_int<cordic_abs_t::In_W>   im_values_in[n_lines];
-    ap_uint<cordic_abs_t::Out_W> values_out[n_lines];
+    ap_int<cordic_abs_t::In_W>   re_values_in[max_lines];
+    ap_int<cordic_abs_t::In_W>   im_values_in[max_lines];
+    ap_uint<cordic_abs_t::Out_W> values_out[max_lines];
 
-    double results[n_lines];
+    double results[max_lines];
 
     FILE * INPUT = fopen(input_fn.c_str(), "r");
 
@@ -81,7 +85,6 @@ int main(int argc, char ** argv) {
 
         cordic_abs_16_4_6(re_values_in[iter], im_values_in[iter], values_out[iter]);
 
-
         // Display the results
         // cout << "Series " << iter;
         // cout << " Outcome: ";
@@ -91,7 +94,7 @@ int main(int argc, char ** argv) {
         //         << cordic_abs_t::scale_cordic(values_out[iter].to_double()) / cordic_abs_t::out_scale_factor << " "
         //         << results[iter] << std::endl;
 
-        const double dbl_res =  cordic_abs_t::scale_cordic(values_out[iter].to_double() ) / cordic_abs_t::out_scale_factor;
+        const double dbl_res = cordic_abs_t::scale_cordic(values_out[iter].to_double()) / cordic_abs_t::out_scale_factor;
 
         if (std::abs(dbl_res - results[iter]) > abs_margin) {
             counted_errors++;

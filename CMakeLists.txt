@@ -18,20 +18,28 @@
 cmake_minimum_required (VERSION 3.16.0 FATAL_ERROR)
 # setting this is required
 
-set (CMAKE_CXX_STANDARD 14)
-set (CMAKE_CXX_STANDARD_REQUIRED ON)
-set (CMAKE_CXX_EXTENSIONS OFF)
-set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
-
-set (CMAKE_EXPORT_COMPILE_COMMANDS true)
-
 project (
   CordicAbs
   LANGUAGES CXX
   VERSION 0.1
 )
+
+if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.2))
+  message (
+    FATAL_ERROR
+      "This project require a GNU compiler version greater than 6.2."
+      "\nNote: If you tried to use g++-4.6.3 as provided by Xilinx Vivado v2019.1, use directly the TCL script "
+      "in the folder `hls_files/cordicabs_16_4_6`."
+  )
+endif ()
+
+set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set (CMAKE_CXX_EXTENSIONS OFF)
+
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
 # ##################################################################################################
 # Options
@@ -39,6 +47,15 @@ project (
 
 option (EXPORT_COMMANDS "export compile commands, for use with clangd for example." ON)
 option (ENABLE_XILINX "use Xilinx provided proprietary headers." OFF)
+if (ENABLE_XILINX)
+  option (XILINX_COSIM "use TCL Vivado/Vitis HLS script to co-simulate the design." OFF)
+  if (XILINX_COSIM)
+    option (XILINX_IP "use TCL Vivado/Vitis HLS script to generate an IP." OFF)
+    if (XILINX_IP)
+      option (XILINX_IMPL "use TCL Vivado/Vitis HLS script to run design implementation." OFF)
+    endif ()
+  endif ()
+endif ()
 
 option (ENABLE_TESTING "use Catch2 in conjunction with CTest as a test suite." ON)
 option (ENABLE_SOFTWARE
@@ -70,11 +87,16 @@ if (ENABLE_XILINX)
   )
 
   if (XILINX_VER VERSION_GREATER_EQUAL "2020.1")
-    set (AP_INCLUDE_DIR ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/include)
+    set (AP_INCLUDE_DIR ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/include CACHE INTERNAL "Path to Xilinx includes" FORCE)
+    find_program (XILINX_HLS vitis_hls HINTS ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/bin NO_CACHE REQUIRED)
   else ()
-    set (AP_INCLUDE_DIR ${XILINX_HOME}/Vivado/${XILINX_VER}/include)
+    message (
+      FATAL_ERROR
+        "Xilinx versions less than 2020.1 are not supported due to the outdated compiler version in use"
+    )
   endif ()
   message (STATUS "AP headers must lie under ${AP_INCLUDE_DIR}")
+
 else ()
   set (
     AP_TYPES_HINT
@@ -127,4 +149,55 @@ if (ENABLE_TESTING)
   include (CTest)
   include (Catch)
   catch_discover_tests (cordicabs_tb)
+
+  if (ENABLE_XILINX)
+    find_file (INPUT_DAT_TB input.dat HINTS ${CMAKE_SOURCE_DIR}/data REQUIRED)
+    if (CMAKE_VERSION VERSION_LESS 3.19.0)
+      cmake_policy (SET CMP0110 OLD)
+      add_test (NAME "\"Xilinx C-Simulation Testbench\"" COMMAND cordicabs_xilinx_tb
+                                                                 ${INPUT_DAT_TB}
+      )
+    else ()
+      cmake_policy (SET CMP0110 NEW)
+      add_test (NAME "Xilinx C-Simulation Testbench" COMMAND cordicabs_xilinx_tb ${INPUT_DAT_TB})
+    endif ()
+
+    if (XILINX_COSIM)
+      set (
+        XILINX_TESTLINES
+        "1000"
+        CACHE STRING "Number of co-simulation passes"
+      )
+
+      if (XILINX_IP)
+        set (
+          EXPORT_IP
+          "1"
+          CACHE INTERNAL "EXPORT_IP"
+        )
+        if (XILINX_IMPL)
+          set (
+            RUN_IMPL
+            "1"
+            CACHE INTERNAL "RUN_IMPL"
+          )
+        endif ()
+      endif ()
+      add_custom_target (
+        run_hls
+        COMMAND ${XILINX_HLS} ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
+                ${XILINX_TESTLINES} ${EXPORT_IP} ${RUN_IMPL}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6
+        USES_TERMINAL
+      )
+
+      if (CMAKE_VERSION VERSION_LESS 3.190.0)
+        cmake_policy (SET CMP0110 OLD)
+        add_test (NAME "\"Xilinx HLS TCL Flow\"" COMMAND run_hls)
+      else ()
+        cmake_policy (SET CMP0110 NEW)
+        add_test (NAME "Xilinx HLS TCL Flow" COMMAND run_hls)
+      endif ()
+    endif ()
+  endif ()
 endif ()

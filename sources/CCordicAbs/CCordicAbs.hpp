@@ -50,18 +50,24 @@ public:
     static constexpr const unsigned Out_I     = In_I + 3;
     static constexpr const unsigned nb_stages = Tnb_stages;
 
-    static constexpr unsigned kn_i             = unsigned(kn_values[nb_stages - 1] * double(1U << 3)); // 3 bits are enough
+    static constexpr unsigned kn_i             = unsigned(kn_values[nb_stages - 1] * double(1U << 4)); // 4 bits are enough
     static constexpr unsigned in_scale_factor  = unsigned(1U << (In_W - In_I));
     static constexpr unsigned out_scale_factor = unsigned(1U << (Out_W - Out_I));
 
     static constexpr int64_t scale_cordic(int64_t in) {
-        return in * kn_i / 8U;
+        return in * kn_i / 16U;
     }
 
     static constexpr double scale_cordic(double in) {
         return in * kn_values[nb_stages - 1];
     }
 
+    static constexpr ap_uint<Out_W> scale_cordic(ap_uint<Out_W> in) {
+        return ap_uint<Out_W>(ap_uint<Out_W+4>(in * ap_uint<4>(kn_i)) >> 4U);
+    }
+
+
+#if !defined (XILINX_MAJOR) || XILINX_MAJOR >= 2020
     static constexpr ap_uint<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {
         ap_int<Out_W> A[nb_stages + 1];
         ap_int<Out_W> B[nb_stages + 1];
@@ -88,6 +94,7 @@ public:
 
         return ap_uint<Out_W>(A[nb_stages]);
     }
+#endif
 
 #if !defined(__SYNTHESIS__) && defined(SOFTWARE)
     static constexpr uint64_t process(int64_t re_in, int64_t im_in) {

@@ -22,6 +22,8 @@ The [Catch2](https://github.com/catchorg/Catch) test framework has been used in 
 - Uses Catch v2.13.7,
 - Depends on Xilinx HLS arbitrary precision types, available as FOSS [here provided by Xilinx](https://github.com/Xilinx/HLS_arbitrary_Precision_Types) or [here patched by myself](https://github.com/DrasLorus/HLS_arbitrary_Precision_Types). Note: Xilinx also provides proprietary versions of those headers, suitable for synthesis and implementation, bundled with their products.
 
+A Xilinx C++ HLS testbench is also available, as well as a TCL script to run simulation, synthesis, co-simulation and IP export and implementation if wanted. Xilinx HLS v2020.2 can be directly called from CMake by the target `run_hls` if the options `ENABLE_TESTING`, `ENABLE_XILINX` and `COSIM_XILINX` are enabled. If CMake feels like black magic, It is advice to use tools like `ccmake` (NCurses terminal interface to cmake) or `cmake-gui`.
+
 ## License and copyright
 
 Copyright 2022 Camille "DrasLorus" Monière.
