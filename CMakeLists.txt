@@ -140,18 +140,18 @@ endif ()
 if (ENABLE_TESTING)
   find_package (Catch2 REQUIRED)
 
-  add_library (catch_common OBJECT sources/tb/main_catch2.cpp)
-  target_link_libraries (catch_common PUBLIC Catch2::Catch2)
+  add_library (catch_common_${PROJECT_NAME} OBJECT sources/tb/main_catch2.cpp)
+  target_link_libraries (catch_common_${PROJECT_NAME} PUBLIC Catch2::Catch2)
 
   add_executable (cordicabs_tb sources/tb/cordicabs_tb.cpp)
-  target_link_libraries (cordicabs_tb catch_common cordicabs)
+  target_link_libraries (cordicabs_tb catch_common_${PROJECT_NAME} cordicabs)
 
   include (CTest)
   include (Catch)
-  catch_discover_tests (cordicabs_tb)
+  catch_discover_tests (cordicabs_tb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data)
 
   if (ENABLE_XILINX)
-    find_file (INPUT_DAT_TB input.dat HINTS ${CMAKE_SOURCE_DIR}/data REQUIRED)
+    find_file (INPUT_DAT_TB input.dat HINTS data REQUIRED)
     if (CMAKE_VERSION VERSION_LESS 3.19.0)
       cmake_policy (SET CMP0110 OLD)
       add_test (NAME "\"Xilinx C-Simulation Testbench\"" COMMAND cordicabs_xilinx_tb

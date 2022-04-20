@@ -19,6 +19,8 @@
 
 #include "CCordicAbs/CCordicAbs.hpp"
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 
@@ -144,7 +146,6 @@ TEST_CASE("Constexpr CordicAbs works with AP-Types", "[CORDICABS]") {
         typedef CCordicAbs<16, 4, 6> cordic_abs;
 
         string input_fn  = "../data/input.dat";  // _8_14_4_17_5_19_7_12
-        string output_fn = "../data/output.dat"; // _8_14_4_17_5_19_7_12
 
         constexpr unsigned n_lines = 100000;
 
@@ -155,6 +156,10 @@ TEST_CASE("Constexpr CordicAbs works with AP-Types", "[CORDICABS]") {
         double results[n_lines];
 
         FILE * INPUT = fopen(input_fn.c_str(), "r");
+
+        if (!bool(INPUT)) {
+            throw(string("fopen failed for ") + input_fn + string(": ") + string(strerror(errno)));
+        }
 
         // Init test vector
         for (unsigned i = 0; i < n_lines; i++) {
