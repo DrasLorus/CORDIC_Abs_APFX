@@ -63,11 +63,10 @@ public:
     }
 
     static constexpr ap_uint<Out_W> scale_cordic(ap_uint<Out_W> in) {
-        return ap_uint<Out_W>(ap_uint<Out_W+4>(in * ap_uint<4>(kn_i)) >> 4U);
+        return ap_uint<Out_W>(ap_uint<Out_W + 4>(in * ap_uint<4>(kn_i)) >> 4U);
     }
 
-
-#if !defined (XILINX_MAJOR) || XILINX_MAJOR >= 2020
+#if !defined(XILINX_MAJOR) || XILINX_MAJOR >= 2020
     static constexpr ap_uint<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {
         ap_int<Out_W> A[nb_stages + 1];
         ap_int<Out_W> B[nb_stages + 1];

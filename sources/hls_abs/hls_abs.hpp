@@ -34,7 +34,7 @@ struct hls_abs<false> {
     template <int _Tsize>
     static ap_uint<_Tsize + 1> abs(ap_int<_Tsize> value) {
         const ap_uint<_Tsize - 1> u_value    = value.range(_Tsize - 2, 0);
-        const bool            sign_value = value.bit(_Tsize - 1);
+        const bool                sign_value = value.bit(_Tsize - 1);
 
         const ap_uint<_Tsize + 1> a_value = sign_value
                                               ? ap_uint<_Tsize + 1>((~u_value) + true)

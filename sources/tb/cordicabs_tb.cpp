@@ -134,7 +134,7 @@ TEST_CASE("Constexpr CordicAbs works with C-Types", "[CORDICABS]") {
 
             // outfile << values_in[iter].real() << " " << values_in[iter].imag() << " " << values_out[iter] << " " << results[iter] << endl;
 
-            REQUIRE_THAT(cordic_abs::scale_cordic(double(values_out[iter])) / cordic_abs::out_scale_factor , WithinAbsMatcher(results[iter], abs_margin));
+            REQUIRE_THAT(cordic_abs::scale_cordic(double(values_out[iter])) / cordic_abs::out_scale_factor, WithinAbsMatcher(results[iter], abs_margin));
         }
         // outfile.close();
     }
@@ -145,7 +145,7 @@ TEST_CASE("Constexpr CordicAbs works with AP-Types", "[CORDICABS]") {
     SECTION("W:16 - I:4 - Stages:6") {
         typedef CCordicAbs<16, 4, 6> cordic_abs;
 
-        string input_fn  = "../data/input.dat";  // _8_14_4_17_5_19_7_12
+        string input_fn = "../data/input.dat"; // _8_14_4_17_5_19_7_12
 
         constexpr unsigned n_lines = 100000;
 

@@ -22,6 +22,6 @@
 typedef CCordicAbs<16, 4, 6> cordic_abs_t;
 
 void cordic_abs_16_4_6(
-    ap_int<cordic_abs_t::In_W> re_in,
-    ap_int<cordic_abs_t::In_W> im_in,
+    ap_int<cordic_abs_t::In_W>     re_in,
+    ap_int<cordic_abs_t::In_W>     im_in,
     ap_uint<cordic_abs_t::Out_W> & module_out);

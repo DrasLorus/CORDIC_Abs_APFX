@@ -19,7 +19,7 @@
 
 #include "top_level_cordic.hpp"
 
-#if !defined (XILINX_MAJOR) || XILINX_MAJOR >= 2020
+#if !defined(XILINX_MAJOR) || XILINX_MAJOR >= 2020
 
 void cordic_abs_16_4_6(
     ap_int<cordic_abs_t::In_W>     re_in,
@@ -38,8 +38,8 @@ void cordic_abs_16_4_6(
 
 #else
 
-constexpr unsigned In_W  = cordic_abs_t::In_W;
-constexpr unsigned Out_W = cordic_abs_t::Out_W;
+constexpr unsigned In_W      = cordic_abs_t::In_W;
+constexpr unsigned Out_W     = cordic_abs_t::Out_W;
 constexpr unsigned nb_stages = cordic_abs_t::nb_stages;
 
 static ap_uint<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {

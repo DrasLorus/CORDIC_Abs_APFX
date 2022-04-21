@@ -18,6 +18,3 @@
  */
 
 #include "CCordicAbs.hpp"
-
-
-
