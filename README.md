@@ -1,5 +1,7 @@
 # CORDIC Abs APFX
 
+[![CMakeDocker](https://github.com/DrasLorus/Cordic_Abs_APFX/actions/workflows/docker.yml/badge.svg)](https://github.com/DrasLorus/Cordic_Abs_APFX/actions/workflows/docker.yml)
+
 A free way to implement a CORDIC-based Complex Absolute Value using HLS, with bit-accurate precision.
 
 ## Goal
