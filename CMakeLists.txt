@@ -87,8 +87,14 @@ if (ENABLE_XILINX)
   )
 
   if (XILINX_VER VERSION_GREATER_EQUAL "2020.1")
-    set (AP_INCLUDE_DIR ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/include CACHE INTERNAL "Path to Xilinx includes" FORCE)
-    find_program (XILINX_HLS vitis_hls HINTS ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/bin NO_CACHE REQUIRED)
+    set (
+      AP_INCLUDE_DIR
+      ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/include
+      CACHE INTERNAL "Path to Xilinx includes" FORCE
+    )
+    find_program (
+      XILINX_HLS vitis_hls HINTS ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/bin NO_CACHE REQUIRED
+    )
   else ()
     message (
       FATAL_ERROR
@@ -191,12 +197,22 @@ if (ENABLE_TESTING)
         USES_TERMINAL
       )
 
-      if (CMAKE_VERSION VERSION_LESS 3.190.0)
+      if (CMAKE_VERSION VERSION_LESS 3.19.0)
         cmake_policy (SET CMP0110 OLD)
-        add_test (NAME "\"Xilinx HLS TCL Flow\"" COMMAND run_hls)
+        add_test (
+          NAME "\"Xilinx HLS TCL Flow\""
+          COMMAND ${XILINX_HLS} ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
+                  ${XILINX_TESTLINES} 0 0
+          WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6
+        )
       else ()
         cmake_policy (SET CMP0110 NEW)
-        add_test (NAME "Xilinx HLS TCL Flow" COMMAND run_hls)
+        add_test (
+          NAME "Xilinx HLS TCL Flow"
+          COMMAND ${XILINX_HLS} ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
+                  ${XILINX_TESTLINES} 0 0
+          WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6
+        )
       endif ()
     endif ()
   endif ()
