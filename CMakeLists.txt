@@ -159,7 +159,6 @@ if (ENABLE_TESTING)
   if (ENABLE_XILINX)
     find_file (INPUT_DAT_TB input.dat HINTS data REQUIRED)
     if (CMAKE_VERSION VERSION_LESS 3.19.0)
-      cmake_policy (SET CMP0110 OLD)
       add_test (NAME "\"Xilinx C-Simulation Testbench\"" COMMAND cordicabs_xilinx_tb
                                                                  ${INPUT_DAT_TB}
       )
@@ -198,7 +197,6 @@ if (ENABLE_TESTING)
       )
 
       if (CMAKE_VERSION VERSION_LESS 3.19.0)
-        cmake_policy (SET CMP0110 OLD)
         add_test (
           NAME "\"Xilinx HLS TCL Flow\""
           COMMAND ${XILINX_HLS} ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
