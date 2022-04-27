@@ -157,15 +157,14 @@ if (ENABLE_TESTING)
   catch_discover_tests (cordicabs_tb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data)
 
   if (ENABLE_XILINX)
-    find_file (INPUT_DAT_TB input.dat HINTS data REQUIRED)
+    find_file (INPUT_DAT_TB input.dat HINTS data NO_CACHE REQUIRED)
     if (CMAKE_VERSION VERSION_LESS 3.19.0)
-      add_test (NAME "\"Xilinx C-Simulation Testbench\"" COMMAND cordicabs_xilinx_tb
-                                                                 ${INPUT_DAT_TB}
-      )
+      set (TEST_NAME "\"Xilinx C-Simulation Testbench CordicAbs\"")
     else ()
       cmake_policy (SET CMP0110 NEW)
-      add_test (NAME "Xilinx C-Simulation Testbench" COMMAND cordicabs_xilinx_tb ${INPUT_DAT_TB})
+      set (TEST_NAME "Xilinx C-Simulation Testbench CordicAbs")
     endif ()
+    add_test (NAME ${TEST_NAME} COMMAND cordicabs_xilinx_tb ${INPUT_DAT_TB})
 
     if (XILINX_COSIM)
       set (
