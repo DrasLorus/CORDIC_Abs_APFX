@@ -25,15 +25,23 @@ project (
 )
 
 if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.2))
-  message (
-    FATAL_ERROR
-      "This project require a GNU compiler version greater than 6.2."
-      "\nNote: If you tried to use g++-4.6.3 as provided by Xilinx Vivado v2019.1, use directly the TCL script "
-      "in the folder `hls_files/cordicabs_16_4_6`."
-  )
+  # message ( FATAL_ERROR "This project require a GNU compiler version greater than 6.2." "\nNote:
+  # If you tried to use g++-4.6.3 as provided by Xilinx Vivado v2019.1, use directly the TCL script
+  # " "in the folder `hls_files/cordicabs_16_4_6`." )
+  set (IS_GNU_LEGACY ON)
+else ()
+  set (IS_GNU_LEGACY OFF)
 endif ()
 
-set (CMAKE_CXX_STANDARD 14)
+if (IS_GNU_LEGACY)
+  set (CMAKE_CXX_STANDARD 11)
+  message (
+    WARNING
+      "An old GNU compiler is currently used, Catch2, C++14 and advanced C++11 features are disabled."
+  )
+else ()
+  set (CMAKE_CXX_STANDARD 14)
+endif ()
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
@@ -63,11 +71,22 @@ option (ENABLE_SOFTWARE
 )
 
 option (PEDANTIC "use -Wall and -pedantic." ON)
+option (ENABLE_GCOV "use GCOV and LCOV to assess code coverage." OFF)
 
 # ##################################################################################################
 
 if (PEDANTIC)
   add_compile_options (-Wall -pedantic)
+endif ()
+
+if (ENABLE_GCOV)
+  add_compile_options (
+    -O0
+    -fprofile-arcs
+    -ftest-coverage
+    -fprofile-abs-path
+  )
+  add_link_options (-lgcov --coverage)
 endif ()
 
 if (EXPORT_COMMANDS)
@@ -82,7 +101,7 @@ if (ENABLE_XILINX)
   )
   set (
     XILINX_VER
-    "2020.2"
+    "2019.1"
     CACHE STRING "Xilinx software version to use."
   )
 
@@ -96,9 +115,15 @@ if (ENABLE_XILINX)
       XILINX_HLS vitis_hls HINTS ${XILINX_HOME}/Vitis_HLS/${XILINX_VER}/bin NO_CACHE REQUIRED
     )
   else ()
-    message (
-      FATAL_ERROR
-        "Xilinx versions less than 2020.1 are not supported due to the outdated compiler version in use"
+    # message ( FATAL_ERROR "Xilinx versions less than 2020.1 are not supported due to the outdated
+    # compiler version in use" )
+    set (
+      AP_INCLUDE_DIR
+      ${XILINX_HOME}/Vivado/${XILINX_VER}/include
+      CACHE INTERNAL "Path to Xilinx includes" FORCE
+    )
+    find_program (
+      XILINX_HLS vivado_hls HINTS ${XILINX_HOME}/Vivado/${XILINX_VER}/bin NO_CACHE REQUIRED
     )
   endif ()
   message (STATUS "AP headers must lie under ${AP_INCLUDE_DIR}")
@@ -144,24 +169,30 @@ if (ENABLE_XILINX)
 endif ()
 
 if (ENABLE_TESTING)
-  find_package (Catch2 REQUIRED)
-
-  add_library (catch_common_${PROJECT_NAME} OBJECT sources/tb/main_catch2.cpp)
-  target_link_libraries (catch_common_${PROJECT_NAME} PUBLIC Catch2::Catch2)
-
-  add_executable (cordicabs_tb sources/tb/cordicabs_tb.cpp)
-  target_link_libraries (cordicabs_tb catch_common_${PROJECT_NAME} cordicabs)
-
   include (CTest)
-  include (Catch)
-  catch_discover_tests (cordicabs_tb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data)
+
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.19.0)
+    cmake_policy (SET CMP0110 NEW)
+  endif ()
+
+  if (NOT IS_GNU_LEGACY)
+    find_package (Catch2 REQUIRED)
+
+    add_library (catch_common_${PROJECT_NAME} OBJECT sources/tb/main_catch2.cpp)
+    target_link_libraries (catch_common_${PROJECT_NAME} PUBLIC Catch2::Catch2)
+
+    add_executable (cordicabs_tb sources/tb/cordicabs_tb.cpp)
+    target_link_libraries (cordicabs_tb catch_common_${PROJECT_NAME} cordicabs)
+
+    include (Catch)
+    catch_discover_tests (cordicabs_tb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data)
+  endif ()
 
   if (ENABLE_XILINX)
     find_file (INPUT_DAT_TB input.dat HINTS data NO_CACHE REQUIRED)
     if (CMAKE_VERSION VERSION_LESS 3.19.0)
       set (TEST_NAME "\"Xilinx C-Simulation Testbench CordicAbs\"")
     else ()
-      cmake_policy (SET CMP0110 NEW)
       set (TEST_NAME "Xilinx C-Simulation Testbench CordicAbs")
     endif ()
     add_test (NAME ${TEST_NAME} COMMAND cordicabs_xilinx_tb ${INPUT_DAT_TB})
@@ -169,7 +200,7 @@ if (ENABLE_TESTING)
     if (XILINX_COSIM)
       set (
         XILINX_TESTLINES
-        "1000"
+        "10000"
         CACHE STRING "Number of co-simulation passes"
       )
 
@@ -179,38 +210,40 @@ if (ENABLE_TESTING)
           "1"
           CACHE INTERNAL "EXPORT_IP"
         )
-        if (XILINX_IMPL)
-          set (
-            RUN_IMPL
-            "1"
-            CACHE INTERNAL "RUN_IMPL"
-          )
-        endif ()
+      else ()
+        unset (EXPORT_IP CACHE)
+      endif ()
+      if (XILINX_IMPL)
+        set (
+          RUN_IMPL
+          "1"
+          CACHE INTERNAL "RUN_IMPL"
+        )
+      else ()
+        unset (RUN_IMPL CACHE)
       endif ()
       add_custom_target (
         run_hls
-        COMMAND ${XILINX_HLS} ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
-                ${XILINX_TESTLINES} ${EXPORT_IP} ${RUN_IMPL}
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6
+        COMMAND
+          ${XILINX_HLS} ${CMAKE_CURRENT_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
+          ${XILINX_TESTLINES} ${EXPORT_IP} ${RUN_IMPL}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/hls_files/cordicabs_16_4_6
         USES_TERMINAL
       )
 
       if (CMAKE_VERSION VERSION_LESS 3.19.0)
-        add_test (
-          NAME "\"Xilinx HLS TCL Flow\""
-          COMMAND ${XILINX_HLS} ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
-                  ${XILINX_TESTLINES} 0 0
-          WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6
-        )
+        set (TEST_NAME "\"Xilinx HLS TCL Flow\"")
       else ()
-        cmake_policy (SET CMP0110 NEW)
-        add_test (
-          NAME "Xilinx HLS TCL Flow"
-          COMMAND ${XILINX_HLS} ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
-                  ${XILINX_TESTLINES} 0 0
-          WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/hls_files/cordicabs_16_4_6
-        )
+        set (TEST_NAME "Xilinx HLS TCL Flow")
       endif ()
+      add_test (
+        ${TEST_NAME}
+        COMMAND
+          ${XILINX_HLS} ${CMAKE_CURRENT_SOURCE_DIR}/hls_files/cordicabs_16_4_6/script_16_4_6.tcl
+          ${XILINX_TESTLINES} 0 0
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/hls_files/cordicabs_16_4_6
+      )
+      set_property (TEST ${TEST_NAME} PROPERTY DISABLED TRUE)
     endif ()
   endif ()
 endif ()

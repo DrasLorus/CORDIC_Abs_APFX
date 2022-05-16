@@ -37,20 +37,36 @@
 
 #define cst_abs(x) (x > 0 ? x : -x)
 
+#if __cplusplus < 201402L && XILINX_MAJOR <= 2019
+#ifndef kn_values
+const double kn_values_define[7] = {
+    0.70710678118655, 0.632455532033680, 0.613571991077900,
+    0.608833912517750, 0.607648256256170, 0.607351770141300, 0.607277644093530};
+#define kn_values kn_values_define
+#define kn_i      unsigned(kn_values[Tnb_stages - 1] * double(1U << 4))
+#endif
+
+#define OWN_CONSTEXPR
+#else
+#define OWN_CONSTEXPR constexpr
+#endif
+
 template <unsigned TIn_W, unsigned TIn_I, unsigned Tnb_stages>
 class CCordicAbs {
 public:
+#if __cplusplus >= 201402L || XILINX_MAJOR > 2019
     static constexpr double kn_values[7] = {
         0.70710678118655, 0.632455532033680, 0.613571991077900,
         0.608833912517750, 0.607648256256170, 0.607351770141300, 0.607277644093530};
 
-    static constexpr const unsigned In_W      = TIn_W;
-    static constexpr const unsigned In_I      = TIn_I;
-    static constexpr const unsigned Out_W     = In_W + 2;
-    static constexpr const unsigned Out_I     = In_I + 2;
-    static constexpr const unsigned nb_stages = Tnb_stages;
+    static constexpr unsigned kn_i = unsigned(kn_values[Tnb_stages - 1] * double(1U << 4)); // 4 bits are enough
+#endif
+    static constexpr unsigned In_W      = TIn_W;
+    static constexpr unsigned In_I      = TIn_I;
+    static constexpr unsigned Out_W     = In_W + 2;
+    static constexpr unsigned Out_I     = In_I + 2;
+    static constexpr unsigned nb_stages = Tnb_stages;
 
-    static constexpr unsigned kn_i             = unsigned(kn_values[nb_stages - 1] * double(1U << 4)); // 4 bits are enough
     static constexpr unsigned in_scale_factor  = unsigned(1U << (In_W - In_I));
     static constexpr unsigned out_scale_factor = unsigned(1U << (Out_W - Out_I));
 
@@ -66,8 +82,7 @@ public:
         return ap_uint<Out_W>(ap_uint<Out_W + 4>(in * ap_uint<4>(kn_i)) >> 4U);
     }
 
-#if !defined(XILINX_MAJOR) || XILINX_MAJOR >= 2020
-    static constexpr ap_uint<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {
+    static OWN_CONSTEXPR ap_uint<Out_W> process(ap_int<In_W> re_in, ap_int<In_W> im_in) {
         ap_int<Out_W> A[nb_stages + 1];
         ap_int<Out_W> B[nb_stages + 1];
 
@@ -93,9 +108,8 @@ public:
 
         return ap_uint<Out_W>(A[nb_stages]);
     }
-#endif
 
-#if !defined(__SYNTHESIS__) && defined(SOFTWARE)
+#if !defined(__SYNTHESIS__) && defined(SOFTWARE) && __cplusplus >= 201402L
     static constexpr uint64_t process(int64_t re_in, int64_t im_in) {
 
         const int64_t re_x = re_in;

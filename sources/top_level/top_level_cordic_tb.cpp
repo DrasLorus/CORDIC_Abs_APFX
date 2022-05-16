@@ -44,10 +44,10 @@ int main(int argc, char ** argv) {
         input_fn = string(argv[1]);
     }
 
-    constexpr unsigned max_lines = 10000;
+    constexpr unsigned max_lines = 100000;
     unsigned           n_lines   = max_lines;
     if (argc > 2) {
-        n_lines = unsigned(std::stoi(string(argv[2])));
+        n_lines = std::min(unsigned(std::stoi(string(argv[2]))), max_lines);
     }
 
     ap_int<cordic_abs_t::In_W>   re_values_in[max_lines];
@@ -57,6 +57,10 @@ int main(int argc, char ** argv) {
     double results[max_lines];
 
     FILE * INPUT = fopen(input_fn.c_str(), "r");
+    if (!bool(INPUT)) {
+        perror("Can't open input file");
+        exit(EXIT_FAILURE);
+    }
 
     // Init test vector
     for (unsigned i = 0; i < n_lines; i++) {
@@ -73,7 +77,7 @@ int main(int argc, char ** argv) {
     fclose(INPUT);
 
     // Save the results to a file
-    // ofstream outfile("results.dat");
+    ofstream outfile("results.dat");
 
     constexpr double abs_margin = double(1 << (cordic_abs_t::Out_I - 1)) * 2. / 100.;
 
@@ -89,10 +93,10 @@ int main(int argc, char ** argv) {
         // cout << "Series " << iter;
         // cout << " Outcome: ";
 
-        // outfile << re_values_in[iter].to_double() / cordic_abs_t::in_scale_factor << " "
-        //         << im_values_in[iter].to_double() / cordic_abs_t::in_scale_factor << " "
-        //         << cordic_abs_t::scale_cordic(values_out[iter].to_double()) / cordic_abs_t::out_scale_factor << " "
-        //         << results[iter] << std::endl;
+        outfile << re_values_in[iter].to_double() / cordic_abs_t::in_scale_factor << " "
+                << im_values_in[iter].to_double() / cordic_abs_t::in_scale_factor << " "
+                << cordic_abs_t::scale_cordic(values_out[iter].to_double()) / cordic_abs_t::out_scale_factor << " "
+                << results[iter] << std::endl;
 
         const double dbl_res = cordic_abs_t::scale_cordic(values_out[iter].to_double()) / cordic_abs_t::out_scale_factor;
 
@@ -105,7 +109,7 @@ int main(int argc, char ** argv) {
             }
         }
     }
-    // outfile.close();
+    outfile.close();
 
     printf("RESULT: %s!\n", counted_errors == 0 ? "SUCCESS" : "FAILURE");
 
