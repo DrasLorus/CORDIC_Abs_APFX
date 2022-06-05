@@ -31,6 +31,9 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSI
   set (IS_GNU_LEGACY ON)
 else ()
   set (IS_GNU_LEGACY OFF)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options (/Zc:__cplusplus)
+  endif ()
 endif ()
 
 if (IS_GNU_LEGACY)
@@ -73,6 +76,8 @@ option (ENABLE_SOFTWARE
 option (PEDANTIC "use -Wall and -pedantic." ON)
 option (ENABLE_GCOV "use GCOV and LCOV to assess code coverage." OFF)
 
+option (ENABLE_DEPFETCH "Allow to fetch dependency from external sources." OFF)
+
 # ##################################################################################################
 
 if (PEDANTIC)
@@ -91,6 +96,10 @@ endif ()
 
 if (EXPORT_COMMANDS)
   set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif ()
+
+if (ENABLE_DEPFETCH)
+  include (FetchContent)
 endif ()
 
 if (ENABLE_XILINX)
@@ -128,19 +137,33 @@ if (ENABLE_XILINX)
   endif ()
   message (STATUS "AP headers must lie under ${AP_INCLUDE_DIR}")
 
-else ()
-  set (
+else ()  
+  if (ENABLE_DEPFETCH)
+    FetchContent_Declare (
+      hlsaptypes
+      GIT_REPOSITORY https://github.com/DrasLorus/HLS_arbitrary_Precision_Types.git
+    )
+
+    FetchContent_MakeAvailable (hlsaptypes)
+
+    find_file (
+      AP_FIXED ap_fixed.h
+      HINTS ${hlsaptypes_SOURCE_DIR}
+      PATH_SUFFIXES "include"
+    )
+  else ()
+    set (
     AP_TYPES_HINT
     /usr/include
     CACHE PATH "location of ap_types include directory."
-  )
+    )
 
-  find_file (
+    find_file (
     AP_FIXED ap_fixed.h
     HINTS ${AP_TYPES_HINT}
-    PATH_SUFFIXES ap_types hls_ap_types/include REQUIRED
-  )
-
+    PATH_SUFFIXES ap_types hls_ap_types/include
+    )
+  endif ()
   get_filename_component (AP_INCLUDE_DIR ${AP_FIXED} DIRECTORY)
 endif ()
 
@@ -175,8 +198,22 @@ if (ENABLE_TESTING)
     cmake_policy (SET CMP0110 NEW)
   endif ()
 
+
+
   if (NOT IS_GNU_LEGACY)
-    find_package (Catch2 REQUIRED)
+    if (ENABLE_DEPFETCH)
+      FetchContent_Declare (
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v2.13.9
+      )
+
+      FetchContent_MakeAvailable (Catch2)
+      list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
+    else ()
+      find_package (Catch2 REQUIRED)
+    endif ()
+    
 
     add_library (catch_common_${PROJECT_NAME} OBJECT sources/tb/main_catch2.cpp)
     target_link_libraries (catch_common_${PROJECT_NAME} PUBLIC Catch2::Catch2)
