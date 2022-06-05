@@ -14,3 +14,7 @@ sources/tb/cordic_rom_tb_??*_*.?pp
 
 hls_files/cordicabs_16_4_6/*
 !hls_files/cordicabs_16_4_6/*.tcl
+
+.vs/
+
+CMakeSettings.json
