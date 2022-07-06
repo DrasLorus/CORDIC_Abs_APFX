@@ -39,9 +39,15 @@
 
 #if __cplusplus < 201402L && XILINX_MAJOR <= 2019
 #ifndef kn_values
-const double kn_values_define[7] = {
-    0.70710678118655, 0.632455532033680, 0.613571991077900,
-    0.608833912517750, 0.607648256256170, 0.607351770141300, 0.607277644093530};
+const double kn_values_define[27] = {
+    0.707106781186547, 0.632455532033676, 0.613571991077896, 0.608833912517752,
+    0.607648256256168, 0.607351770141296, 0.607277644093526, 0.607259112298893,
+    0.607254479332562, 0.607253321089875, 0.607253031529134, 0.607252959138945,
+    0.607252941041397, 0.607252936517010, 0.607252935385914, 0.607252935103139,
+    0.607252935032446, 0.607252935014772, 0.607252935010354, 0.607252935009249,
+    0.607252935008973, 0.607252935008904, 0.607252935008887, 0.607252935008883,
+    0.607252935008882, 0.607252935008881};
+
 #define kn_values kn_values_define
 #define kn_i      unsigned(kn_values[Tnb_stages - 1] * double(1U << 4))
 #endif
@@ -55,22 +61,27 @@ template <unsigned TIn_W, unsigned TIn_I, unsigned Tnb_stages>
 class CCordicAbs {
 public:
 #if __cplusplus >= 201402L || XILINX_MAJOR > 2019
-    static constexpr double kn_values[7] = {
-        0.70710678118655, 0.632455532033680, 0.613571991077900,
-        0.608833912517750, 0.607648256256170, 0.607351770141300, 0.607277644093530};
+    static constexpr double kn_values[27] = {
+        0.707106781186547, 0.632455532033676, 0.613571991077896, 0.608833912517752,
+        0.607648256256168, 0.607351770141296, 0.607277644093526, 0.607259112298893,
+        0.607254479332562, 0.607253321089875, 0.607253031529134, 0.607252959138945,
+        0.607252941041397, 0.607252936517010, 0.607252935385914, 0.607252935103139,
+        0.607252935032446, 0.607252935014772, 0.607252935010354, 0.607252935009249,
+        0.607252935008973, 0.607252935008904, 0.607252935008887, 0.607252935008883,
+        0.607252935008882, 0.607252935008881};
 
     static constexpr unsigned kn_i = unsigned(kn_values[Tnb_stages - 1] * double(1U << 4)); // 4 bits are enough
 #endif
     static constexpr unsigned In_W      = TIn_W;
     static constexpr unsigned In_I      = TIn_I;
-    static constexpr unsigned Out_W     = In_W + 2;
-    static constexpr unsigned Out_I     = In_I + 2;
+    static constexpr unsigned Out_W     = In_W + 4;
+    static constexpr unsigned Out_I     = In_I + 4;
     static constexpr unsigned nb_stages = Tnb_stages;
 
     static constexpr unsigned in_scale_factor  = unsigned(1U << (In_W - In_I));
     static constexpr unsigned out_scale_factor = unsigned(1U << (Out_W - Out_I));
 
-    static constexpr int64_t scale_cordic(int64_t in) {
+    static constexpr uint64_t scale_cordic(uint64_t in) {
         return in * kn_i / 16U;
     }
 
