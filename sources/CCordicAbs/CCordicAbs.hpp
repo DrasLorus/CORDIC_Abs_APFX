@@ -133,14 +133,14 @@ public:
 
             const bool sign_B = B > 0;
 
-            const int64_t step_A = +B / int64_t(1U << (u - 1));
-            const int64_t step_B = -A / int64_t(1U << (u - 1));
+            const int64_t step_A = +B / int64_t(1LU << (u - 1));
+            const int64_t step_B = -A / int64_t(1LU << (u - 1));
 
             B = sign_B ? B + step_B : B - step_B;
             A = sign_B ? A + step_A : A - step_A;
         }
 
-        return A;
+        return uint64_t(A);
     }
 
     static constexpr uint64_t process(const std::complex<int64_t> & x_in) {
@@ -155,21 +155,21 @@ public:
 
             const bool sign_B = B > 0;
 
-            const int64_t step_A = +B / int64_t(1U << (u - 1));
-            const int64_t step_B = -A / int64_t(1U << (u - 1));
+            const int64_t step_A = +B / int64_t(1LLU << (u - 1));
+            const int64_t step_B = -A / int64_t(1LLU << (u - 1));
 
             B = sign_B ? B + step_B : B - step_B;
             A = sign_B ? A + step_A : A - step_A;
         }
 
-        return A;
+        return uint64_t(A);
     }
 
     static constexpr double process(std::complex<double> x_in) {
         const std::complex<int64_t> fx_x_in(int64_t(x_in.real() * double(in_scale_factor)),
                                             int64_t(x_in.imag() * double(in_scale_factor)));
 
-        const int64_t fx_out = process(fx_x_in);
+        const uint64_t fx_out = process(fx_x_in);
         return scale_cordic(double(fx_out)) / double(out_scale_factor);
     }
 

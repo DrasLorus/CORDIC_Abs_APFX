@@ -29,6 +29,13 @@
 
 #include <catch2/catch.hpp>
 
+
+#ifdef _MSC_VER
+#define R_FLAG "rt"
+#else
+#define R_FLAG "r"
+#endif
+
 using namespace std;
 
 using Catch::Matchers::Floating::WithinAbsMatcher;
@@ -43,12 +50,12 @@ TEST_CASE("Constexpr CordicAbs works with C-Types", "[CORDICABS]") {
 
         constexpr unsigned n_lines = 100000;
 
-        complex<double> values_in[n_lines];
-        double          values_out[n_lines];
+        vector<complex<double>> values_in(n_lines);
+        vector<double>          values_out(n_lines);
 
-        double results[n_lines];
+        vector<double> results(n_lines);
 
-        FILE * INPUT = fopen(input_fn.c_str(), "r");
+        FILE * INPUT = fopen(input_fn.c_str(), R_FLAG);
 
         // Init test vector
         for (unsigned i = 0; i < n_lines; i++) {
@@ -94,12 +101,12 @@ TEST_CASE("Constexpr CordicAbs works with C-Types", "[CORDICABS]") {
 
         constexpr unsigned n_lines = 100000;
 
-        complex<int64_t> values_in[n_lines];
-        int64_t          values_out[n_lines];
+        vector<complex<int64_t>> values_in(n_lines);
+        vector<uint64_t>          values_out(n_lines);
 
-        double results[n_lines];
+        vector<double> results(n_lines);
 
-        FILE * INPUT = fopen(input_fn.c_str(), "r");
+        FILE * INPUT = fopen(input_fn.c_str(), R_FLAG);
 
         // Init test vector
         for (unsigned i = 0; i < n_lines; i++) {
@@ -149,13 +156,13 @@ TEST_CASE("Constexpr CordicAbs works with AP-Types", "[CORDICABS]") {
 
         constexpr unsigned n_lines = 100000;
 
-        ap_int<cordic_abs::In_W>   re_values_in[n_lines];
-        ap_int<cordic_abs::In_W>   im_values_in[n_lines];
-        ap_uint<cordic_abs::Out_W> values_out[n_lines];
+        vector<ap_int<cordic_abs::In_W>>   re_values_in(n_lines);
+        vector<ap_int<cordic_abs::In_W>>   im_values_in(n_lines);
+        vector<ap_uint<cordic_abs::Out_W>> values_out(n_lines);
 
-        double results[n_lines];
+        vector<double> results(n_lines);
 
-        FILE * INPUT = fopen(input_fn.c_str(), "r");
+        FILE * INPUT = fopen(input_fn.c_str(), R_FLAG);
 
         if (!bool(INPUT)) {
             throw(string("fopen failed for ") + input_fn + string(": ") + string(strerror(errno)));
@@ -212,22 +219,22 @@ TEST_CASE("Constexpr CordicAbs are evaluated during compilation.", "[CORDICABS]"
     SECTION("W:16 - I:4 - Stages:6 - C-Types") {
         typedef CCordicAbs<16, 4, 6> cordic_abs;
 
-        constexpr const complex<int64_t> value_in[3] = {(1U << 12) * 97, -(1U << 12) * 33, (1U << 3) * 12};
+        constexpr const complex<int64_t> value_in[3] = {int(1U << 12) * 97, -int(1U << 12) * 33, int(1U << 3) * 12};
 
-        constexpr int64_t res10 = cordic_abs::process(value_in[0]);
-        constexpr int64_t res20 = cordic_abs::process(value_in[0]);
+        constexpr uint64_t res10 = cordic_abs::process(value_in[0]);
+        constexpr uint64_t res20 = cordic_abs::process(value_in[0]);
         static_assert(res10 == res20, "Test");
         REQUIRE_FALSE(res10 == cordic_abs::process(complex<int64_t>(1, 0)));
         REQUIRE(res10 == cordic_abs::process(value_in[0]));
 
-        constexpr int64_t res11 = cordic_abs::process(value_in[1]);
-        constexpr int64_t res21 = cordic_abs::process(value_in[1]);
+        constexpr uint64_t res11 = cordic_abs::process(value_in[1]);
+        constexpr uint64_t res21 = cordic_abs::process(value_in[1]);
         static_assert(res11 == res21, "Test");
         REQUIRE_FALSE(res11 == cordic_abs::process(complex<int64_t>(1, 0)));
         REQUIRE(res11 == cordic_abs::process(value_in[1]));
 
-        constexpr int64_t res12 = cordic_abs::process(value_in[2]);
-        constexpr int64_t res22 = cordic_abs::process(value_in[2]);
+        constexpr uint64_t res12 = cordic_abs::process(value_in[2]);
+        constexpr uint64_t res22 = cordic_abs::process(value_in[2]);
         static_assert(res12 == res22, "Test");
         REQUIRE_FALSE(res12 == cordic_abs::process(complex<int64_t>(1, 0)));
         REQUIRE(res12 == cordic_abs::process(value_in[2]));
